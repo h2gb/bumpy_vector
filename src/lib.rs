@@ -1,3 +1,5 @@
+//! [![Crate](https://img.shields.io/crates/v/bumpy_vector.svg)](https://crates.io/crates/bumpy_vector)
+//!
 //! A vector-like object where elements can be larger than one "space". We use
 //! this primarily to represent objects in a binary that are made up of one
 //! or more bytes.
