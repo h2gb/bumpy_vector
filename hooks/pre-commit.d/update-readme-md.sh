@@ -15,4 +15,7 @@ BASE=$(git rev-parse --show-toplevel)
 
 # Update README.md
 echo "Updating $BASE/README.md"
-cargo readme > $BASE/README.md || err 'Failed to run `cargo readme`!'
+
+pushd $BASE
+cargo readme > README.md || err 'Failed to run `cargo readme`!'
+popd

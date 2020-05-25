@@ -2,6 +2,12 @@
 
 set -euo pipefail
 
+err() {
+  echo -ne '\e[31m\e[1m' # Red + Bold
+  echo -e "$@"
+  echo -ne '\e[0m'
+}
+
 # This script will be copied into the .git/hooks directory, replacing the hook
 # files such as pre-commit and pre-push. Once in place, this will execute each
 # file in the various hooks/<name>.d/ directories.
@@ -26,7 +32,7 @@ if [[ -d $hook_dir ]]; then
         exit $exit_code
       fi
     else
-      echo "Not executable: $hook"
+      err "Not executable: $hook"
     fi
   done
 fi

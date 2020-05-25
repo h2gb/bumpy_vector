@@ -12,7 +12,7 @@ err() {
 }
 
 # Get the root directory
-BASE=$(git rev-parse --show-toplevel)
+BASE=$(git rev-parse --show-toplevel)/src
 
 # Get a list of shellscripts (don't stop for an error)
 SCRIPTS=$(find "$BASE" -name '*.sh' -readable 2>/dev/null || true)

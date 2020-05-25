@@ -44,7 +44,9 @@
 //! ```
 //!
 //! # TODO
+//!
 //! * Handle 0-sized objects better (well, error sooner)
+//! * Add a feature to disable `serde`
 
 use std::collections::HashMap;
 use serde::{Serialize, Deserialize};

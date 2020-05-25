@@ -3,7 +3,7 @@
 set -euo pipefail
 
 # Get the root directory
-BASE=$(git rev-parse --show-toplevel)
+BASE=$(git rev-parse --show-toplevel)/src
 
 # Turn on yellow output + grep for TODO
 echo -ne '\e[33m' # Yellow
