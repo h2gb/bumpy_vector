@@ -62,8 +62,6 @@ use bumpy_vector::BumpyVector;
 
 // Assumes "serialize" feature is enabled: `bumpy_vector = { features = ["serialize"] }`
 fn main() {
-  # #[cfg(feature = "serialize")]
-  # {
     let mut h: BumpyVector<String> = BumpyVector::new(10);
     h.insert((String::from("a"), 1, 2).into()).unwrap();
 
@@ -72,7 +70,6 @@ fn main() {
 
     // Deserialize
     let h: BumpyVector<String> = ron::de::from_str(&serialized).unwrap();
-  # }
 }
 ```
 

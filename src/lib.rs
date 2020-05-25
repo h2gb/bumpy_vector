@@ -55,13 +55,11 @@
 //! `BumpyVector` can be serialized with any of the serializers that Serde
 //! supports, such as [ron](https://github.com/ron-rs/ron):
 //!
-//! ```
+//! ```ignore
 //! use bumpy_vector::BumpyVector;
 //!
 //! // Assumes "serialize" feature is enabled: `bumpy_vector = { features = ["serialize"] }`
 //! fn main() {
-//!   # #[cfg(feature = "serialize")]
-//!   # {
 //!     let mut h: BumpyVector<String> = BumpyVector::new(10);
 //!     h.insert((String::from("a"), 1, 2).into()).unwrap();
 //!
@@ -70,7 +68,6 @@
 //!
 //!     // Deserialize
 //!     let h: BumpyVector<String> = ron::de::from_str(&serialized).unwrap();
-//!   # }
 //! }
 //! ```
 //!
