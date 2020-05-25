@@ -1,0 +1,13 @@
+[package]
+name = "bumpy_vector"
+version = "0.1.0"
+authors = ["iagox86 <ron-git@skullsecurity.org>"]
+edition = "2018"
+
+[dependencies]
+# Serialize / deserialize
+serde = { version = "~1.0.110", features = ["derive"] }
+ron = "~0.5.1"
+
+[dev-dependencies]
+pretty_assertions = "~0.6.1"
