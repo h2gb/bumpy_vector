@@ -1,8 +1,13 @@
 [package]
 name = "bumpy_vector"
-version = "0.1.0"
+version = "0.0.0"
 authors = ["iagox86 <ron-git@skullsecurity.org>"]
 edition = "2018"
+description = "A Vector-like object with different sized entries"
+license = "MIT"
+documentation = "https://github.com/h2gb/bumpy_vector"
+homepage = "https://github.com/h2gb/bumpy_vector"
+repository = "https://github.com/h2gb/bumpy_vector"
 
 [dependencies]
 # Serialize / deserialize
