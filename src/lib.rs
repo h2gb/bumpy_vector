@@ -5,7 +5,7 @@
 //! potentially made up of many bytes.
 //!
 //! # TODO
-//! * Test what happens with zero-sized entries
+//! * Handle 0-sized objects better (well, error sooner)
 
 use std::collections::HashMap;
 use serde::{Serialize, Deserialize};
