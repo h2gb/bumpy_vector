@@ -18,4 +18,5 @@ echo "Updating $BASE/README.md"
 
 pushd $BASE
 cargo readme > README.md || err 'Failed to run `cargo readme`!'
+git add README.md
 popd

@@ -49,5 +49,6 @@ assert_eq!(1, v.len());
 
 * Handle 0-sized objects better (well, error sooner)
 * Add a feature to disable `serde`
+* Test
 
 License: MIT
