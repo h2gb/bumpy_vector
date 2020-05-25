@@ -2,7 +2,7 @@
 
 [![Crate](https://img.shields.io/crates/v/bumpy_vector.svg)](https://crates.io/crates/bumpy_vector)
 
-A vector-like object where elements can be larger than one "space". We use
+A vector-like object where elements can be larger than one item. We use
 this primarily to represent objects in a binary that are made up of one
 or more bytes.
 
@@ -46,6 +46,8 @@ assert_eq!(1, v.len());
 ```
 
 ## TODO
+
 * Handle 0-sized objects better (well, error sooner)
+* Add a feature to disable `serde`
 
 License: MIT
