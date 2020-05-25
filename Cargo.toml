@@ -20,3 +20,7 @@ ron   = { version = "~0.5.1",   optional = true }
 
 [dev-dependencies]
 pretty_assertions = "~0.6.1"
+
+# This lets us use special features in our documentation
+[package.metadata."docs.rs"]
+all-features = true
