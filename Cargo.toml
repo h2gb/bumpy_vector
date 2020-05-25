@@ -8,6 +8,7 @@ license = "MIT"
 documentation = "https://github.com/h2gb/bumpy_vector"
 homepage = "https://github.com/h2gb/bumpy_vector"
 repository = "https://github.com/h2gb/bumpy_vector"
+readme = "README.md"
 
 [dependencies]
 # Serialize / deserialize
