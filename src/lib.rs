@@ -47,8 +47,11 @@
 //!
 //! * Handle 0-sized objects better (well, error sooner)
 //! * Add a feature to disable `serde`
+//! * More consistency with assert() order
 
 use std::collections::HashMap;
+
+#[cfg(feature = "serde")]
 use serde::{Serialize, Deserialize};
 
 /// Represents a single entry.
@@ -79,7 +82,8 @@ use serde::{Serialize, Deserialize};
 ///
 /// let e: BumpyEntry<&str> = ("hello", 0, 1).into();
 /// ```
-#[derive(Serialize, Deserialize, Debug, Default)]
+#[derive(Debug, Default)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct BumpyEntry<T> {
     pub entry: T,
     pub index: usize,
@@ -97,7 +101,8 @@ impl<T> From<(T, usize, usize)> for BumpyEntry<T> {
 }
 
 /// Represents an instance of a Bumpy Vector
-#[derive(Serialize, Deserialize, Debug, Default)]
+#[derive(Debug, Default)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct BumpyVector<T> {
     /// The data is represented by a HashMap, where the index is the key and
     /// a BumpyEntry is the object.
@@ -911,6 +916,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "serde")] // Enable serde for this test
     fn test_serialize() {
         let mut h: BumpyVector<String> = BumpyVector::new(10);
         h.insert((String::from("a"), 1, 2).into()).unwrap();
