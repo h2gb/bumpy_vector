@@ -5,5 +5,6 @@ Initial codebase.
 # Version 0.0.1
 
 Changes:
-* Serialization is disabled by default behind a feature [#2]
 * Much better documentation, including a README.md file [#1]
+* Added git pre-commit hooks [#1]
+* Serialization is disabled by default behind a feature [#2]
