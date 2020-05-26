@@ -13,7 +13,6 @@ err() {
 # Get the root directory
 BASE=$(git rev-parse --show-toplevel)/src
 
-echo "Running tests..."
-pushd $BASE
+pushd $BASE > /dev/null
 cargo test --all-features 2>&1 > /dev/null || err "One or more tests failed!"
-popd
+popd > /dev/null

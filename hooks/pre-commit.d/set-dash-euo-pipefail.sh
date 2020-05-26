@@ -21,7 +21,6 @@ SCRIPTS=$(find "$BASE" -name '*.sh' -readable 2>/dev/null || true)
 # of the repository)
 BLACKLIST=""
 
-echo "Ensuring that all bash scripts contain \`set -euo pipefile\` near the top..."
 BAD=
 for script in $SCRIPTS; do
   # Ensure the path isn't blacklisted
