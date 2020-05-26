@@ -73,8 +73,4 @@ fn main() {
 }
 ```
 
-## TODO
-
-* More consistency with assert() order
-
 License: MIT
