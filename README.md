@@ -75,7 +75,6 @@ fn main() {
 
 ## TODO
 
-* Handle 0-sized objects better (well, error sooner)
 * More consistency with assert() order
 
 License: MIT
