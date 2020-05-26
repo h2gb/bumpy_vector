@@ -1,6 +1,6 @@
 [package]
 name = "bumpy_vector"
-version = "0.0.0"
+version = "0.0.1"
 authors = ["iagox86 <ron-git@skullsecurity.org>"]
 edition = "2018"
 description = "A Vector-like object with different sized entries"
