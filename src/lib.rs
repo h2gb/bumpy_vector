@@ -43,12 +43,42 @@
 //! assert_eq!(1, v.len());
 //! ```
 //!
+//! # Serialize / deserialize
+//!
+//! When installed with the 'serialize' feature:
+//!
+//! ```toml
+//! bumpy_vector = { version = "~0.0.0", features = ["serialize"] }
+//! ```
+//!
+//! Serialization support using [serde](https://serde.rs/) is enabled. The
+//! `BumpyVector` can be serialized with any of the serializers that Serde
+//! supports, such as [ron](https://github.com/ron-rs/ron):
+//!
+//! ```ignore
+//! use bumpy_vector::BumpyVector;
+//!
+//! // Assumes "serialize" feature is enabled: `bumpy_vector = { features = ["serialize"] }`
+//! fn main() {
+//!     let mut h: BumpyVector<String> = BumpyVector::new(10);
+//!     h.insert((String::from("a"), 1, 2).into()).unwrap();
+//!
+//!     // Serialize
+//!     let serialized = ron::ser::to_string(&h).unwrap();
+//!
+//!     // Deserialize
+//!     let h: BumpyVector<String> = ron::de::from_str(&serialized).unwrap();
+//! }
+//! ```
+//!
 //! # TODO
 //!
 //! * Handle 0-sized objects better (well, error sooner)
-//! * Add a feature to disable `serde`
+//! * More consistency with assert() order
 
 use std::collections::HashMap;
+
+#[cfg(feature = "serialize")]
 use serde::{Serialize, Deserialize};
 
 /// Represents a single entry.
@@ -79,7 +109,8 @@ use serde::{Serialize, Deserialize};
 ///
 /// let e: BumpyEntry<&str> = ("hello", 0, 1).into();
 /// ```
-#[derive(Serialize, Deserialize, Debug, Default)]
+#[derive(Debug, Default)]
+#[cfg_attr(feature = "serialize", derive(Serialize, Deserialize))]
 pub struct BumpyEntry<T> {
     pub entry: T,
     pub index: usize,
@@ -97,7 +128,8 @@ impl<T> From<(T, usize, usize)> for BumpyEntry<T> {
 }
 
 /// Represents an instance of a Bumpy Vector
-#[derive(Serialize, Deserialize, Debug, Default)]
+#[derive(Debug, Default)]
+#[cfg_attr(feature = "serialize", derive(Serialize, Deserialize))]
 pub struct BumpyVector<T> {
     /// The data is represented by a HashMap, where the index is the key and
     /// a BumpyEntry is the object.
@@ -911,6 +943,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "serialize")] // Only test if we enable serialization
     fn test_serialize() {
         let mut h: BumpyVector<String> = BumpyVector::new(10);
         h.insert((String::from("a"), 1, 2).into()).unwrap();

@@ -10,10 +10,17 @@ homepage = "https://github.com/h2gb/bumpy_vector"
 repository = "https://github.com/h2gb/bumpy_vector"
 readme = "README.md"
 
+[features]
+serialize = ["serde", "ron"]
+
 [dependencies]
-# Serialize / deserialize
-serde = { version = "~1.0.110", features = ["derive"] }
-ron = "~0.5.1"
+# Serialize / deserialize are disabled by default
+serde = { version = "~1.0.110", optional = true }
+ron   = { version = "~0.5.1",   optional = true }
 
 [dev-dependencies]
 pretty_assertions = "~0.6.1"
+
+# This lets us use special features in our documentation
+[package.metadata."docs.rs"]
+all-features = true
