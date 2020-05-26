@@ -70,10 +70,6 @@
 //!     let h: BumpyVector<String> = ron::de::from_str(&serialized).unwrap();
 //! }
 //! ```
-//!
-//! # TODO
-//!
-//! * More consistency with assert() order
 
 use std::collections::HashMap;
 
@@ -216,10 +212,10 @@ impl<'a, T> BumpyVector<T> {
     /// let mut v: BumpyVector<&str> = BumpyVector::new(10);
     ///
     /// // Insert a 2-byte value starting at index 5 (using BumpyEntry directly)
-    /// assert_eq!(Ok(()), v.insert(BumpyEntry { entry: "hello", index: 5, size: 2 }));
+    /// assert!(v.insert(BumpyEntry { entry: "hello", index: 5, size: 2 }).is_ok());
     ///
     /// // Insert another 2-byte value starting at index 7 (using into())
-    /// assert_eq!(Ok(()), v.insert(("hello", 7, 2).into()));
+    /// assert!(v.insert(("hello", 7, 2).into()).is_ok());
     ///
     /// // Fail to insert a value that would overlap the first
     /// assert!(v.insert(("hello", 4, 2).into()).is_err());
@@ -309,8 +305,8 @@ impl<'a, T> BumpyVector<T> {
     /// v.insert(("hello", 0, 4).into()).unwrap();
     /// v.insert(("hello", 4, 4).into()).unwrap();
     ///
-    /// assert_eq!(v.remove_range(0, 10).len(), 2);
-    /// assert_eq!(v.remove_range(0, 10).len(), 0);
+    /// assert_eq!(2, v.remove_range(0, 10).len());
+    /// assert_eq!(0, v.remove_range(0, 10).len());
     /// ```
     pub fn remove_range(&mut self, index: usize, length: usize) -> Vec<BumpyEntry<T>> {
         let mut result: Vec<BumpyEntry<T>> = Vec::new();
@@ -347,10 +343,10 @@ impl<'a, T> BumpyVector<T> {
     /// assert!(v.get(4).is_none());
     /// assert!(v.get(5).is_none());
     ///
-    /// assert_eq!(v.get(0).unwrap().entry, &"hello");
-    /// assert_eq!(v.get(1).unwrap().entry, &"hello");
-    /// assert_eq!(v.get(2).unwrap().entry, &"hello");
-    /// assert_eq!(v.get(3).unwrap().entry, &"hello");
+    /// assert_eq!(&"hello", v.get(0).unwrap().entry);
+    /// assert_eq!(&"hello", v.get(1).unwrap().entry);
+    /// assert_eq!(&"hello", v.get(2).unwrap().entry);
+    /// assert_eq!(&"hello", v.get(3).unwrap().entry);
     /// ```
     pub fn get(&self, index: usize) -> Option<BumpyEntry<&T>> {
         // Try to get the real offset
@@ -395,7 +391,7 @@ impl<'a, T> BumpyVector<T> {
     /// assert!(v.get_exact(4).is_none());
     /// assert!(v.get_exact(5).is_none());
     ///
-    /// assert_eq!(v.get_exact(0).unwrap().entry, &"hello");
+    /// assert_eq!(&"hello", v.get_exact(0).unwrap().entry);
     /// ```
     pub fn get_exact(&self, index: usize) -> Option<BumpyEntry<&T>> {
         match self.data.get(&index) {
@@ -525,7 +521,7 @@ mod tests {
 
         // Insert a 5-byte value at 10
         h.insert(("hello", 10, 5).into()).unwrap();
-        assert_eq!(h.len(), 1);
+        assert_eq!(1, h.len());
 
         // Earlier values are none
         assert!(h.get(8).is_none());
@@ -533,32 +529,32 @@ mod tests {
 
         // Middle values are all identical, no matter where in the entry we
         // retrieve it
-        assert_eq!(h.get(10).unwrap().entry, &"hello");
-        assert_eq!(h.get(10).unwrap().index, 10);
-        assert_eq!(h.get(10).unwrap().size,  5);
+        assert_eq!(&"hello", h.get(10).unwrap().entry);
+        assert_eq!(10,       h.get(10).unwrap().index);
+        assert_eq!(5,        h.get(10).unwrap().size);
 
-        assert_eq!(h.get(11).unwrap().entry, &"hello");
-        assert_eq!(h.get(11).unwrap().index, 10);
-        assert_eq!(h.get(11).unwrap().size,  5);
+        assert_eq!(&"hello", h.get(11).unwrap().entry);
+        assert_eq!(10,       h.get(11).unwrap().index);
+        assert_eq!(5,        h.get(11).unwrap().size);
 
-        assert_eq!(h.get(12).unwrap().entry, &"hello");
-        assert_eq!(h.get(12).unwrap().index, 10);
-        assert_eq!(h.get(12).unwrap().size,  5);
+        assert_eq!(&"hello", h.get(12).unwrap().entry);
+        assert_eq!(10,       h.get(12).unwrap().index);
+        assert_eq!(5,        h.get(12).unwrap().size);
 
-        assert_eq!(h.get(13).unwrap().entry, &"hello");
-        assert_eq!(h.get(13).unwrap().index, 10);
-        assert_eq!(h.get(13).unwrap().size,  5);
+        assert_eq!(&"hello", h.get(13).unwrap().entry);
+        assert_eq!(10,       h.get(13).unwrap().index);
+        assert_eq!(5,        h.get(13).unwrap().size);
 
-        assert_eq!(h.get(14).unwrap().entry, &"hello");
-        assert_eq!(h.get(14).unwrap().index, 10);
-        assert_eq!(h.get(14).unwrap().size,  5);
+        assert_eq!(&"hello", h.get(14).unwrap().entry);
+        assert_eq!(10,       h.get(14).unwrap().index);
+        assert_eq!(5,        h.get(14).unwrap().size);
 
         // Last couple entries are none
         assert!(h.get(15).is_none());
         assert!(h.get(16).is_none());
 
         // There should still be a single entry
-        assert_eq!(h.len(), 1);
+        assert_eq!(1, h.len());
     }
 
     #[test]
@@ -576,24 +572,24 @@ mod tests {
 
         // Insert a 2-byte value at 10
         h.insert(("hello", 10, 2).into()).unwrap();
-        assert_eq!(h.len(), 1);
+        assert_eq!(1, h.len());
 
         // We can insert before
         assert!(h.insert(("ok", 8,  1).into()).is_ok());
-        assert_eq!(h.len(), 2);
+        assert_eq!(2, h.len());
         assert!(h.insert(("ok", 9,  1).into()).is_ok());
-        assert_eq!(h.len(), 3);
+        assert_eq!(3, h.len());
 
         // We can't insert within
         assert!(h.insert(("error", 10, 1).into()).is_err());
         assert!(h.insert(("error", 11, 1).into()).is_err());
-        assert_eq!(h.len(), 3);
+        assert_eq!(3, h.len());
 
         // We can insert after
         assert!(h.insert(("ok", 12, 1).into()).is_ok());
-        assert_eq!(h.len(), 4);
+        assert_eq!(4, h.len());
         assert!(h.insert(("ok", 13, 1).into()).is_ok());
-        assert_eq!(h.len(), 5);
+        assert_eq!(5, h.len());
     }
 
     #[test]
@@ -615,7 +611,7 @@ mod tests {
         // 6-9 and 13-15 will work
         assert!(h.insert(BumpyEntry::from(("ok", 6,  3))).is_ok());
         assert!(h.insert(("ok", 13, 3).into()).is_ok());
-        assert_eq!(h.len(), 3);
+        assert_eq!(3, h.len());
     }
 
     #[test]
@@ -625,27 +621,27 @@ mod tests {
         h.insert(("hello", 8, 2).into()).unwrap();
         h.insert(("hello", 10, 2).into()).unwrap();
         h.insert(("hello", 12, 2).into()).unwrap();
-        assert_eq!(h.len(), 3);
+        assert_eq!(3, h.len());
 
         // Remove from the start of an entry
         let e = h.remove(10).unwrap();
-        assert_eq!(e.entry, "hello");
-        assert_eq!(e.index, 10);
-        assert_eq!(e.size, 2);
-        assert_eq!(h.len(), 2);
+        assert_eq!("hello", e.entry);
+        assert_eq!(10,      e.index);
+        assert_eq!(2,       e.size);
+        assert_eq!(2,       h.len());
         assert!(h.get(10).is_none());
         assert!(h.get(11).is_none());
 
         // Put it back
         h.insert(("hello", 10, 2).into()).unwrap();
-        assert_eq!(h.len(), 3);
+        assert_eq!(3, h.len());
 
         // Remove from the middle of an entry
         let e = h.remove(11).unwrap();
-        assert_eq!(e.entry, "hello");
-        assert_eq!(e.index, 10);
-        assert_eq!(e.size, 2);
-        assert_eq!(h.len(), 2);
+        assert_eq!("hello", e.entry);
+        assert_eq!(10,      e.index);
+        assert_eq!(2,       e.size);
+        assert_eq!(2,       h.len());
         assert!(h.get(10).is_none());
         assert!(h.get(11).is_none());
 
@@ -654,15 +650,15 @@ mod tests {
         assert!(result.is_none());
 
         let e = h.remove(13).unwrap();
-        assert_eq!(e.entry, "hello");
-        assert_eq!(e.index, 12);
-        assert_eq!(e.size, 2);
-        assert_eq!(h.len(), 1);
+        assert_eq!("hello", e.entry);
+        assert_eq!(12,      e.index);
+        assert_eq!(2,       e.size);
+        assert_eq!(1,       h.len());
         assert!(h.get(12).is_none());
         assert!(h.get(13).is_none());
 
         h.remove(8);
-        assert_eq!(h.len(), 0);
+        assert_eq!(0, h.len());
         assert!(h.get(8).is_none());
         assert!(h.get(9).is_none());
     }
@@ -671,13 +667,17 @@ mod tests {
     fn test_beginning() {
         let mut h: BumpyVector<&str> = BumpyVector::new(10);
         h.insert(("hello", 0, 2).into()).unwrap();
-        assert_eq!(h.len(), 1);
-        assert_eq!(h.get(0).unwrap().entry, &"hello");
-        assert_eq!(h.get(0).unwrap().index, 0);
-        assert_eq!(h.get(0).unwrap().size,  2);
-        assert_eq!(h.get(1).unwrap().entry, &"hello");
-        assert_eq!(h.get(1).unwrap().index, 0);
-        assert_eq!(h.get(1).unwrap().size,  2);
+
+        assert_eq!(1, h.len());
+
+        assert_eq!(&"hello", h.get(0).unwrap().entry);
+        assert_eq!(0,        h.get(0).unwrap().index);
+        assert_eq!(2,        h.get(0).unwrap().size);
+
+        assert_eq!(&"hello", h.get(1).unwrap().entry);
+        assert_eq!(0,        h.get(1).unwrap().index);
+        assert_eq!(2,        h.get(1).unwrap().size);
+
         assert!(h.get(2).is_none());
     }
 
@@ -686,24 +686,24 @@ mod tests {
         // Inserting at 7-8-9 works
         let mut h: BumpyVector<&str> = BumpyVector::new(10);
         h.insert(("hello", 7, 3).into()).unwrap();
-        assert_eq!(h.len(), 1);
+        assert_eq!(1, h.len());
 
         // Inserting at 8-9-10 and onward does not
         let mut h: BumpyVector<&str> = BumpyVector::new(10);
         assert!(h.insert(("hello", 8, 3).into()).is_err());
-        assert_eq!(h.len(), 0);
+        assert_eq!(0, h.len());
 
         let mut h: BumpyVector<&str> = BumpyVector::new(10);
         assert!(h.insert(("hello", 9, 3).into()).is_err());
-        assert_eq!(h.len(), 0);
+        assert_eq!(0, h.len());
 
         let mut h: BumpyVector<&str> = BumpyVector::new(10);
         assert!(h.insert(("hello", 10, 3).into()).is_err());
-        assert_eq!(h.len(), 0);
+        assert_eq!(0, h.len());
 
         let mut h: BumpyVector<&str> = BumpyVector::new(10);
         assert!(h.insert(("hello", 11, 3).into()).is_err());
-        assert_eq!(h.len(), 0);
+        assert_eq!(0, h.len());
     }
 
     #[test]
@@ -713,60 +713,60 @@ mod tests {
         h.insert(("hello", 8, 2).into()).unwrap();
         h.insert(("hello", 10, 2).into()).unwrap();
         h.insert(("hello", 12, 2).into()).unwrap();
-        assert_eq!(h.len(), 3);
+        assert_eq!(3, h.len());
 
         // Test removing the first two entries
         let result = h.remove_range(8, 4);
-        assert_eq!(h.len(), 1);
-        assert_eq!(result.len(), 2);
+        assert_eq!(1, h.len());
+        assert_eq!(2, result.len());
 
-        assert_eq!(result[0].entry, "hello");
-        assert_eq!(result[0].index, 8);
-        assert_eq!(result[0].size, 2);
+        assert_eq!("hello", result[0].entry);
+        assert_eq!(8,       result[0].index);
+        assert_eq!(2,       result[0].size);
 
-        assert_eq!(result[1].entry, "hello");
-        assert_eq!(result[1].index, 10);
-        assert_eq!(result[1].size, 2);
+        assert_eq!("hello", result[1].entry);
+        assert_eq!(10,      result[1].index);
+        assert_eq!(2,       result[1].size);
 
         // Re-create the object
         let mut h: BumpyVector<&str> = BumpyVector::new(100);
         h.insert(("hello", 8, 2).into()).unwrap();
         h.insert(("hello", 10, 2).into()).unwrap();
         h.insert(("hello", 12, 2).into()).unwrap();
-        assert_eq!(h.len(), 3);
+        assert_eq!(3, h.len());
 
         // Test where the first entry starts left of the actual starting index
         let result = h.remove_range(9, 2);
-        assert_eq!(h.len(), 1);
-        assert_eq!(result.len(), 2);
+        assert_eq!(1, h.len());
+        assert_eq!(2, result.len());
 
-        assert_eq!(result[0].entry, "hello");
-        assert_eq!(result[0].index, 8);
-        assert_eq!(result[0].size, 2);
+        assert_eq!("hello", result[0].entry);
+        assert_eq!(8,       result[0].index);
+        assert_eq!(2,       result[0].size);
 
-        assert_eq!(result[1].entry, "hello");
-        assert_eq!(result[1].index, 10);
-        assert_eq!(result[1].size, 2);
+        assert_eq!("hello", result[1].entry);
+        assert_eq!(10,      result[1].index);
+        assert_eq!(2,       result[1].size);
 
         // Re-create the object
         let mut h: BumpyVector<&str> = BumpyVector::new(100);
         h.insert(("hello", 8, 2).into()).unwrap();
         h.insert(("hello", 10, 2).into()).unwrap();
         h.insert(("hello", 12, 2).into()).unwrap();
-        assert_eq!(h.len(), 3);
+        assert_eq!(3, h.len());
 
         // Test the entire object
         let result = h.remove_range(0, 1000);
-        assert_eq!(h.len(), 0);
-        assert_eq!(result.len(), 3);
+        assert_eq!(0, h.len());
+        assert_eq!(3, result.len());
 
-        assert_eq!(result[0].entry, "hello");
-        assert_eq!(result[0].index, 8);
-        assert_eq!(result[0].size, 2);
+        assert_eq!("hello", result[0].entry);
+        assert_eq!(8,       result[0].index);
+        assert_eq!(2,       result[0].size);
 
-        assert_eq!(result[1].entry, "hello");
-        assert_eq!(result[1].index, 10);
-        assert_eq!(result[1].size, 2);
+        assert_eq!("hello", result[1].entry);
+        assert_eq!(10,      result[1].index);
+        assert_eq!(2,       result[1].size);
     }
 
     #[test]
@@ -810,23 +810,23 @@ mod tests {
 
         // Get just the first two
         let result = h.get_range(2, 4, false);
-        assert_eq!(result.len(), 2);
+        assert_eq!(2, result.len());
 
         // Get the first two, then just barely the third
         let result = h.get_range(2, 5, false);
-        assert_eq!(result.len(), 3);
+        assert_eq!(3, result.len());
 
         // Get the first two again, starting further left
         let result = h.get_range(1, 5, false);
-        assert_eq!(result.len(), 2);
+        assert_eq!(2, result.len());
 
         // Get all three again
         let result = h.get_range(1, 6, false);
-        assert_eq!(result.len(), 3);
+        assert_eq!(3, result.len());
 
         // Get way more than everything
         let result = h.get_range(0, 100, false);
-        assert_eq!(result.len(), 3);
+        assert_eq!(3, result.len());
     }
 
     #[test]
@@ -844,23 +844,23 @@ mod tests {
 
         // Get just the first two, plus two empty spots
         let result = h.get_range(2, 4, true);
-        assert_eq!(result.len(), 4);
+        assert_eq!(4, result.len());
 
         // Get the first two, the two empty spots, then just barely the third
         let result = h.get_range(2, 5, true);
-        assert_eq!(result.len(), 5);
+        assert_eq!(5, result.len());
 
         // Get an empty spot, then the first one
         let result = h.get_range(0, 3, true);
-        assert_eq!(result.len(), 2);
+        assert_eq!(2, result.len());
 
         // Get an empty spot, then the first two
         let result = h.get_range(0, 4, true);
-        assert_eq!(result.len(), 3);
+        assert_eq!(3, result.len());
 
         // Get the last one, then the empty spot after it, then we're at the end and should stop
         let result = h.get_range(8, 1000, true);
-        assert_eq!(result.len(), 2);
+        assert_eq!(2, result.len());
     }
 
     #[test]
@@ -883,44 +883,44 @@ mod tests {
         // None (index 0)
         let e = iter.next().unwrap();
         assert!(e.entry.is_none());
-        assert_eq!(e.index, 0);
-        assert_eq!(e.size, 1);
+        assert_eq!(0, e.index);
+        assert_eq!(1, e.size);
 
         // Entry "a" (index 1-2)
         let e = iter.next().unwrap();
-        assert_eq!(e.entry, Some(&"a"));
-        assert_eq!(e.index, 1);
-        assert_eq!(e.size, 2);
+        assert_eq!(Some(&"a"), e.entry);
+        assert_eq!(1,          e.index);
+        assert_eq!(2,          e.size);
 
         // Entry "b" (index 3)
         let e = iter.next().unwrap();
-        assert_eq!(e.entry, Some(&"b"));
-        assert_eq!(e.index, 3);
-        assert_eq!(e.size, 1);
+        assert_eq!(Some(&"b"), e.entry);
+        assert_eq!(3,          e.index);
+        assert_eq!(1,          e.size);
 
         // None (index 4)
         let e = iter.next().unwrap();
         assert!(e.entry.is_none());
-        assert_eq!(e.index, 4);
-        assert_eq!(e.size, 1);
+        assert_eq!(4, e.index);
+        assert_eq!(1, e.size);
 
         // None (index 5)
         let e = iter.next().unwrap();
         assert!(e.entry.is_none());
-        assert_eq!(e.index, 5);
-        assert_eq!(e.size, 1);
+        assert_eq!(5, e.index);
+        assert_eq!(1, e.size);
 
         // Entry "c" (index 6-8)
         let e = iter.next().unwrap();
-        assert_eq!(e.entry, Some(&"c"));
-        assert_eq!(e.index, 6);
-        assert_eq!(e.size, 3);
+        assert_eq!(Some(&"c"), e.entry);
+        assert_eq!(6,          e.index);
+        assert_eq!(3,          e.size);
 
         // None (index 9)
         let e = iter.next().unwrap();
         assert!(e.entry.is_none());
-        assert_eq!(e.index, 9);
-        assert_eq!(e.size, 1);
+        assert_eq!(9, e.index);
+        assert_eq!(1, e.size);
 
         // That's it!
         assert!(iter.next().is_none());
@@ -946,21 +946,21 @@ mod tests {
 
         // Entry "a" (index 1-2)
         let e = iter.next().unwrap();
-        assert_eq!(e.entry, Some(&"a"));
-        assert_eq!(e.index, 1);
-        assert_eq!(e.size, 2);
+        assert_eq!(Some(&"a"), e.entry);
+        assert_eq!(1,          e.index);
+        assert_eq!(2,          e.size);
 
         // Entry "b" (index 3)
         let e = iter.next().unwrap();
-        assert_eq!(e.entry, Some(&"b"));
-        assert_eq!(e.index, 3);
-        assert_eq!(e.size, 1);
+        assert_eq!(Some(&"b"), e.entry);
+        assert_eq!(3,          e.index);
+        assert_eq!(1,          e.size);
 
         // Entry "c" (index 6-8)
         let e = iter.next().unwrap();
-        assert_eq!(e.entry, Some(&"c"));
-        assert_eq!(e.index, 6);
-        assert_eq!(e.size, 3);
+        assert_eq!(Some(&"c"), e.entry);
+        assert_eq!(6,          e.index);
+        assert_eq!(3,          e.size);
 
         // That's it!
         assert!(iter.next().is_none());
@@ -982,14 +982,14 @@ mod tests {
         let h: BumpyVector<String> = ron::de::from_str(&serialized).unwrap();
 
         // Make sure we have the same entries
-        assert_eq!(h.get(2).unwrap().entry, "a");
-        assert_eq!(h.get(2).unwrap().index, 1);
-        assert_eq!(h.get(2).unwrap().size, 2);
-        assert_eq!(h.get(3).unwrap().entry, "b");
+        assert_eq!("a", h.get(2).unwrap().entry);
+        assert_eq!(1,   h.get(2).unwrap().index);
+        assert_eq!(2,   h.get(2).unwrap().size);
+        assert_eq!("b", h.get(3).unwrap().entry);
         assert!(h.get(4).is_none());
         assert!(h.get(5).is_none());
-        assert_eq!(h.get(6).unwrap().entry, "c");
-        assert_eq!(h.get(6).unwrap().index, 6);
-        assert_eq!(h.get(6).unwrap().size, 3);
+        assert_eq!("c", h.get(6).unwrap().entry);
+        assert_eq!(6,   h.get(6).unwrap().index);
+        assert_eq!(3,   h.get(6).unwrap().size);
     }
 }
