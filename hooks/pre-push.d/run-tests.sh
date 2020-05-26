@@ -7,14 +7,12 @@ err() {
   echo -ne '\e[31m\e[1m' # Red + Bold
   echo -e "$@"
   echo -ne '\e[0m'
-  exit 0
+  exit 1
 }
 
 # Get the root directory
-BASE=$(git rev-parse --show-toplevel)
+BASE=$(git rev-parse --show-toplevel)/src
 
-# Update README.md
 pushd $BASE > /dev/null
-cargo readme > README.md || err 'Failed to run `cargo readme`!'
-git add README.md
+cargo test --all-features -q 2>&1 > /dev/null || err "One or more tests failed!"
 popd > /dev/null
