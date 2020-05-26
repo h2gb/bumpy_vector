@@ -73,7 +73,6 @@
 //!
 //! # TODO
 //!
-//! * Handle 0-sized objects better (well, error sooner)
 //! * More consistency with assert() order
 
 use std::collections::HashMap;
@@ -206,6 +205,8 @@ impl<'a, T> BumpyVector<T> {
     /// entry or exceed `max_size`, return `Err(&str)` with a descriptive error
     /// string.
     ///
+    /// Size must be at least 1.
+    ///
     /// # Example
     ///
     /// ```
@@ -230,6 +231,10 @@ impl<'a, T> BumpyVector<T> {
     /// assert!(v.insert(("hello", 100, 1).into()).is_err());
     /// ```
     pub fn insert(&mut self, entry: BumpyEntry<T>) -> Result<(), &'static str> {
+        if entry.size == 0 {
+            return Err("Zero is an invalid size for an entry");
+        }
+
         if entry.index + entry.size > self.max_size {
             return Err("Invalid entry: entry exceeds max size");
         }
@@ -440,6 +445,11 @@ impl<'a, T> BumpyVector<T> {
     /// assert_eq!(3, v.get_range(0, 4, true).len());
     /// assert_eq!(4, v.get_range(0, 5, true).len());
     /// ```
+    ///
+    /// # Panics
+    ///
+    /// Panics if an entry's size is 0. That shouldn't be possible short of
+    /// tinkering with internal state (most likely modifying serialized data).
     pub fn get_range(&self, start: usize, length: usize, include_empty: bool) -> Vec<BumpyEntry<Option<&T>>> {
         // We're stuffing all of our data into a vector to iterate over it
         let mut result: Vec<BumpyEntry<Option<&T>>> = Vec::new();
@@ -460,6 +470,12 @@ impl<'a, T> BumpyVector<T> {
                     index: i,
                     size: e.size,
                 });
+
+                // Prevent an infinite loop
+                if e.size == 0 {
+                    panic!("Entry size cannot be 0!");
+                }
+
                 i += e.size;
             } else {
                 // If the user wants empty elements, push i fake entry
@@ -543,6 +559,15 @@ mod tests {
 
         // There should still be a single entry
         assert_eq!(h.len(), 1);
+    }
+
+    #[test]
+    fn test_zero_sized_insert() {
+        let mut h: BumpyVector<&str> = BumpyVector::new(100);
+
+        // Insert a 0-byte array
+        assert!(h.insert(("hello", 10, 0).into()).is_err());
+        assert_eq!(0, h.len());
     }
 
     #[test]
