@@ -13,4 +13,4 @@ Changes:
 # Version 0.0.2
 
 Changes:
-* Added `#[derive(Clone)]` to make it cloneable [#4]
+* Added `#[derive(Clone)]` to make it cloneable [#7]
