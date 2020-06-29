@@ -104,7 +104,7 @@ use serde::{Serialize, Deserialize};
 ///
 /// let e: BumpyEntry<&str> = ("hello", 0, 1).into();
 /// ```
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 #[cfg_attr(feature = "serialize", derive(Serialize, Deserialize))]
 pub struct BumpyEntry<T> {
     pub entry: T,
@@ -123,7 +123,7 @@ impl<T> From<(T, usize, usize)> for BumpyEntry<T> {
 }
 
 /// Represents an instance of a Bumpy Vector
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 #[cfg_attr(feature = "serialize", derive(Serialize, Deserialize))]
 pub struct BumpyVector<T> {
     /// The data is represented by a HashMap, where the index is the key and
@@ -991,5 +991,28 @@ mod tests {
         assert_eq!("c", h.get(6).unwrap().entry);
         assert_eq!(6,   h.get(6).unwrap().index);
         assert_eq!(3,   h.get(6).unwrap().size);
+    }
+
+    #[test]
+    #[cfg(feature = "serialize")] // Only test if we enable serialization
+    fn test_clone() {
+        let mut h: BumpyVector<String> = BumpyVector::new(10);
+        h.insert((String::from("a"), 1, 2).into()).unwrap();
+        h.insert((String::from("b"), 3, 1).into()).unwrap();
+        h.insert((String::from("c"), 6, 3).into()).unwrap();
+
+        // Serialize
+        let cloned = h.clone();
+
+        // Make sure we have the same entries
+        assert_eq!("a", cloned.get(2).unwrap().entry);
+        assert_eq!(1,   cloned.get(2).unwrap().index);
+        assert_eq!(2,   cloned.get(2).unwrap().size);
+        assert_eq!("b", cloned.get(3).unwrap().entry);
+        assert!(cloned.get(4).is_none());
+        assert!(cloned.get(5).is_none());
+        assert_eq!("c", cloned.get(6).unwrap().entry);
+        assert_eq!(6,   cloned.get(6).unwrap().index);
+        assert_eq!(3,   cloned.get(6).unwrap().size);
     }
 }
