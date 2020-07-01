@@ -343,29 +343,19 @@ impl<'a, T> BumpyVector<T> {
     /// assert!(v.get(4).is_none());
     /// assert!(v.get(5).is_none());
     ///
-    /// assert_eq!(&"hello", v.get(0).unwrap().entry);
-    /// assert_eq!(&"hello", v.get(1).unwrap().entry);
-    /// assert_eq!(&"hello", v.get(2).unwrap().entry);
-    /// assert_eq!(&"hello", v.get(3).unwrap().entry);
+    /// assert_eq!("hello", v.get(0).unwrap().entry);
+    /// assert_eq!("hello", v.get(1).unwrap().entry);
+    /// assert_eq!("hello", v.get(2).unwrap().entry);
+    /// assert_eq!("hello", v.get(3).unwrap().entry);
     /// ```
-    pub fn get(&self, index: usize) -> Option<BumpyEntry<&T>> {
+    pub fn get(&self, index: usize) -> Option<&BumpyEntry<T>> {
         // Try to get the real offset
         let real_offset = self.get_entry_start(index);
 
         // If there's no element, return none
         if let Some(o) = real_offset {
             // Get the entry itself from the address
-            let entry = self.data.get(&o);
-
-            // Although this probably won't fail, we need to check!
-            if let Some(e) = entry {
-                // Return the entry
-                return Some(BumpyEntry {
-                  entry: &e.entry,
-                  index: e.index,
-                  size: e.size,
-                });
-            }
+            return self.data.get(&o);
         }
 
         None
@@ -391,17 +381,10 @@ impl<'a, T> BumpyVector<T> {
     /// assert!(v.get_exact(4).is_none());
     /// assert!(v.get_exact(5).is_none());
     ///
-    /// assert_eq!(&"hello", v.get_exact(0).unwrap().entry);
+    /// assert_eq!("hello", v.get_exact(0).unwrap().entry);
     /// ```
-    pub fn get_exact(&self, index: usize) -> Option<BumpyEntry<&T>> {
-        match self.data.get(&index) {
-            Some(e) => Some(BumpyEntry {
-                entry: &e.entry,
-                index: e.index,
-                size: e.size,
-            }),
-            None    => None,
-        }
+    pub fn get_exact(&self, index: usize) -> Option<&BumpyEntry<T>> {
+        self.data.get(&index)
     }
 
     /// Return a vector of entries within the given range.
@@ -533,25 +516,25 @@ mod tests {
 
         // Middle values are all identical, no matter where in the entry we
         // retrieve it
-        assert_eq!(&"hello", h.get(10).unwrap().entry);
-        assert_eq!(10,       h.get(10).unwrap().index);
-        assert_eq!(5,        h.get(10).unwrap().size);
+        assert_eq!("hello", h.get(10).unwrap().entry);
+        assert_eq!(10,      h.get(10).unwrap().index);
+        assert_eq!(5,       h.get(10).unwrap().size);
 
-        assert_eq!(&"hello", h.get(11).unwrap().entry);
-        assert_eq!(10,       h.get(11).unwrap().index);
-        assert_eq!(5,        h.get(11).unwrap().size);
+        assert_eq!("hello", h.get(11).unwrap().entry);
+        assert_eq!(10,      h.get(11).unwrap().index);
+        assert_eq!(5,       h.get(11).unwrap().size);
 
-        assert_eq!(&"hello", h.get(12).unwrap().entry);
-        assert_eq!(10,       h.get(12).unwrap().index);
-        assert_eq!(5,        h.get(12).unwrap().size);
+        assert_eq!("hello", h.get(12).unwrap().entry);
+        assert_eq!(10,      h.get(12).unwrap().index);
+        assert_eq!(5,       h.get(12).unwrap().size);
 
-        assert_eq!(&"hello", h.get(13).unwrap().entry);
-        assert_eq!(10,       h.get(13).unwrap().index);
-        assert_eq!(5,        h.get(13).unwrap().size);
+        assert_eq!("hello", h.get(13).unwrap().entry);
+        assert_eq!(10,      h.get(13).unwrap().index);
+        assert_eq!(5,       h.get(13).unwrap().size);
 
-        assert_eq!(&"hello", h.get(14).unwrap().entry);
-        assert_eq!(10,       h.get(14).unwrap().index);
-        assert_eq!(5,        h.get(14).unwrap().size);
+        assert_eq!("hello", h.get(14).unwrap().entry);
+        assert_eq!(10,      h.get(14).unwrap().index);
+        assert_eq!(5,       h.get(14).unwrap().size);
 
         // Last couple entries are none
         assert!(h.get(15).is_none());
@@ -674,13 +657,13 @@ mod tests {
 
         assert_eq!(1, h.len());
 
-        assert_eq!(&"hello", h.get(0).unwrap().entry);
-        assert_eq!(0,        h.get(0).unwrap().index);
-        assert_eq!(2,        h.get(0).unwrap().size);
+        assert_eq!("hello", h.get(0).unwrap().entry);
+        assert_eq!(0,       h.get(0).unwrap().index);
+        assert_eq!(2,       h.get(0).unwrap().size);
 
-        assert_eq!(&"hello", h.get(1).unwrap().entry);
-        assert_eq!(0,        h.get(1).unwrap().index);
-        assert_eq!(2,        h.get(1).unwrap().size);
+        assert_eq!("hello", h.get(1).unwrap().entry);
+        assert_eq!(0,       h.get(1).unwrap().index);
+        assert_eq!(2,       h.get(1).unwrap().size);
 
         assert!(h.get(2).is_none());
     }

@@ -14,3 +14,9 @@ Changes:
 
 Changes:
 * Added `#[derive(Clone)]` to make it cloneable [#7]
+
+# Version 0.0.3
+
+Changes:
+* Added `.max_size()` function
+* `.get()` and `.get_exact()` now return a reference to the `BumpyEntry` rather than a new `BumpyEntry` with a reference to the object `T`
