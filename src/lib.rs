@@ -494,6 +494,10 @@ impl<'a, T> BumpyVector<T> {
         // Return the number of entries
         return self.data.len();
     }
+
+    pub fn max_size(&self) -> usize {
+        return self.max_size;
+    }
 }
 
 /// Convert into an iterator.
@@ -685,6 +689,8 @@ mod tests {
     fn test_max_size() {
         // Inserting at 7-8-9 works
         let mut h: BumpyVector<&str> = BumpyVector::new(10);
+        assert_eq!(10, h.max_size());
+
         h.insert(("hello", 7, 3).into()).unwrap();
         assert_eq!(1, h.len());
 
