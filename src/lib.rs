@@ -361,6 +361,44 @@ impl<'a, T> BumpyVector<T> {
         None
     }
 
+    /// Return a mutable reference to an entry at the given index.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use bumpy_vector::BumpyVector;
+    ///
+    /// // Create a small BumpyVector
+    /// let mut h: BumpyVector<String> = BumpyVector::new(10);
+    ///
+    /// // Insert a string to the start
+    /// h.insert((String::from("hello"), 0, 2).into()).unwrap();
+    /// assert_eq!("hello", h.get(0).unwrap().entry);
+    /// assert_eq!("hello", h.get(1).unwrap().entry);
+    ///
+    /// // Get a mutable reference to the string
+    /// let s = h.get_mut(1).unwrap();
+    ///
+    /// // Modify it somehow
+    /// s.entry.make_ascii_uppercase();
+    ///
+    /// // Verify it's changed
+    /// assert_eq!("HELLO", h.get(0).unwrap().entry);
+    /// assert_eq!("HELLO", h.get(1).unwrap().entry);
+    /// ```
+    pub fn get_mut(&mut self, index: usize) -> Option<&mut BumpyEntry<T>> {
+        // Try to get the real offset
+        let real_offset = self.get_entry_start(index);
+
+        // If there's no element, return none
+        if let Some(o) = real_offset {
+            // Get the entry itself from the address
+            return self.data.get_mut(&o);
+        }
+
+        None
+    }
+
     /// Return a reference to an entry that *starts at* the given index.
     ///
     /// # Example
@@ -385,6 +423,35 @@ impl<'a, T> BumpyVector<T> {
     /// ```
     pub fn get_exact(&self, index: usize) -> Option<&BumpyEntry<T>> {
         self.data.get(&index)
+    }
+
+    /// Return a mutable reference to an entry at exactly the given index.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use bumpy_vector::BumpyVector;
+    ///
+    /// // Create a small BumpyVector
+    /// let mut h: BumpyVector<String> = BumpyVector::new(10);
+    ///
+    /// // Insert a string to the start
+    /// h.insert((String::from("hello"), 0, 2).into()).unwrap();
+    /// assert_eq!("hello", h.get_exact(0).unwrap().entry);
+    /// assert!(h.get_exact(1).is_none());
+    ///
+    /// // Get a mutable reference to the string
+    /// let s = h.get_exact_mut(0).unwrap();
+    ///
+    /// // Modify it somehow
+    /// s.entry.make_ascii_uppercase();
+    ///
+    /// // Verify it's changed
+    /// assert_eq!("HELLO", h.get_exact(0).unwrap().entry);
+    /// assert!(h.get_exact(1).is_none());
+    /// ```
+    pub fn get_exact_mut(&mut self, index: usize) -> Option<&mut BumpyEntry<T>> {
+        self.data.get_mut(&index)
     }
 
     /// Return a vector of entries within the given range.
@@ -772,6 +839,20 @@ mod tests {
     }
 
     #[test]
+    fn test_get_mut() {
+        // Create an object
+        let mut h: BumpyVector<String> = BumpyVector::new(100);
+        h.insert((String::from("hello"), 8, 2).into()).unwrap();
+
+        // Get a mutable reference
+        let s = h.get_mut(9).unwrap();
+        s.entry.make_ascii_uppercase();
+
+        let s2 = h.get(8).unwrap();
+        assert_eq!("HELLO", s2.entry);
+    }
+
+    #[test]
     fn test_get_exact() {
         // Create an object
         let mut h: BumpyVector<&str> = BumpyVector::new(100);
@@ -782,6 +863,23 @@ mod tests {
         assert!(h.get_exact(8).is_some());
         assert!(h.get_exact(9).is_none());
         assert!(h.get_exact(10).is_none());
+    }
+
+    #[test]
+    fn test_get_exact_mut() {
+        // Create an object
+        let mut h: BumpyVector<String> = BumpyVector::new(100);
+        h.insert((String::from("hello"), 8, 2).into()).unwrap();
+
+        // Make sure it's actually exist
+        assert!(h.get_exact_mut(9).is_none());
+
+        // Get a mutable reference
+        let s = h.get_exact_mut(8).unwrap();
+        s.entry.make_ascii_uppercase();
+
+        let s = h.get_exact(8).unwrap();
+        assert_eq!("HELLO", s.entry);
     }
 
     #[test]
