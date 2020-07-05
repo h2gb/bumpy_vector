@@ -343,29 +343,57 @@ impl<'a, T> BumpyVector<T> {
     /// assert!(v.get(4).is_none());
     /// assert!(v.get(5).is_none());
     ///
-    /// assert_eq!(&"hello", v.get(0).unwrap().entry);
-    /// assert_eq!(&"hello", v.get(1).unwrap().entry);
-    /// assert_eq!(&"hello", v.get(2).unwrap().entry);
-    /// assert_eq!(&"hello", v.get(3).unwrap().entry);
+    /// assert_eq!("hello", v.get(0).unwrap().entry);
+    /// assert_eq!("hello", v.get(1).unwrap().entry);
+    /// assert_eq!("hello", v.get(2).unwrap().entry);
+    /// assert_eq!("hello", v.get(3).unwrap().entry);
     /// ```
-    pub fn get(&self, index: usize) -> Option<BumpyEntry<&T>> {
+    pub fn get(&self, index: usize) -> Option<&BumpyEntry<T>> {
         // Try to get the real offset
         let real_offset = self.get_entry_start(index);
 
         // If there's no element, return none
         if let Some(o) = real_offset {
             // Get the entry itself from the address
-            let entry = self.data.get(&o);
+            return self.data.get(&o);
+        }
 
-            // Although this probably won't fail, we need to check!
-            if let Some(e) = entry {
-                // Return the entry
-                return Some(BumpyEntry {
-                  entry: &e.entry,
-                  index: e.index,
-                  size: e.size,
-                });
-            }
+        None
+    }
+
+    /// Return a mutable reference to an entry at the given index.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use bumpy_vector::BumpyVector;
+    ///
+    /// // Create a small BumpyVector
+    /// let mut h: BumpyVector<String> = BumpyVector::new(10);
+    ///
+    /// // Insert a string to the start
+    /// h.insert((String::from("hello"), 0, 2).into()).unwrap();
+    /// assert_eq!("hello", h.get(0).unwrap().entry);
+    /// assert_eq!("hello", h.get(1).unwrap().entry);
+    ///
+    /// // Get a mutable reference to the string
+    /// let s = h.get_mut(1).unwrap();
+    ///
+    /// // Modify it somehow
+    /// s.entry.make_ascii_uppercase();
+    ///
+    /// // Verify it's changed
+    /// assert_eq!("HELLO", h.get(0).unwrap().entry);
+    /// assert_eq!("HELLO", h.get(1).unwrap().entry);
+    /// ```
+    pub fn get_mut(&mut self, index: usize) -> Option<&mut BumpyEntry<T>> {
+        // Try to get the real offset
+        let real_offset = self.get_entry_start(index);
+
+        // If there's no element, return none
+        if let Some(o) = real_offset {
+            // Get the entry itself from the address
+            return self.data.get_mut(&o);
         }
 
         None
@@ -391,17 +419,39 @@ impl<'a, T> BumpyVector<T> {
     /// assert!(v.get_exact(4).is_none());
     /// assert!(v.get_exact(5).is_none());
     ///
-    /// assert_eq!(&"hello", v.get_exact(0).unwrap().entry);
+    /// assert_eq!("hello", v.get_exact(0).unwrap().entry);
     /// ```
-    pub fn get_exact(&self, index: usize) -> Option<BumpyEntry<&T>> {
-        match self.data.get(&index) {
-            Some(e) => Some(BumpyEntry {
-                entry: &e.entry,
-                index: e.index,
-                size: e.size,
-            }),
-            None    => None,
-        }
+    pub fn get_exact(&self, index: usize) -> Option<&BumpyEntry<T>> {
+        self.data.get(&index)
+    }
+
+    /// Return a mutable reference to an entry at exactly the given index.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use bumpy_vector::BumpyVector;
+    ///
+    /// // Create a small BumpyVector
+    /// let mut h: BumpyVector<String> = BumpyVector::new(10);
+    ///
+    /// // Insert a string to the start
+    /// h.insert((String::from("hello"), 0, 2).into()).unwrap();
+    /// assert_eq!("hello", h.get_exact(0).unwrap().entry);
+    /// assert!(h.get_exact(1).is_none());
+    ///
+    /// // Get a mutable reference to the string
+    /// let s = h.get_exact_mut(0).unwrap();
+    ///
+    /// // Modify it somehow
+    /// s.entry.make_ascii_uppercase();
+    ///
+    /// // Verify it's changed
+    /// assert_eq!("HELLO", h.get_exact(0).unwrap().entry);
+    /// assert!(h.get_exact(1).is_none());
+    /// ```
+    pub fn get_exact_mut(&mut self, index: usize) -> Option<&mut BumpyEntry<T>> {
+        self.data.get_mut(&index)
     }
 
     /// Return a vector of entries within the given range.
@@ -494,6 +544,10 @@ impl<'a, T> BumpyVector<T> {
         // Return the number of entries
         return self.data.len();
     }
+
+    pub fn max_size(&self) -> usize {
+        return self.max_size;
+    }
 }
 
 /// Convert into an iterator.
@@ -529,25 +583,25 @@ mod tests {
 
         // Middle values are all identical, no matter where in the entry we
         // retrieve it
-        assert_eq!(&"hello", h.get(10).unwrap().entry);
-        assert_eq!(10,       h.get(10).unwrap().index);
-        assert_eq!(5,        h.get(10).unwrap().size);
+        assert_eq!("hello", h.get(10).unwrap().entry);
+        assert_eq!(10,      h.get(10).unwrap().index);
+        assert_eq!(5,       h.get(10).unwrap().size);
 
-        assert_eq!(&"hello", h.get(11).unwrap().entry);
-        assert_eq!(10,       h.get(11).unwrap().index);
-        assert_eq!(5,        h.get(11).unwrap().size);
+        assert_eq!("hello", h.get(11).unwrap().entry);
+        assert_eq!(10,      h.get(11).unwrap().index);
+        assert_eq!(5,       h.get(11).unwrap().size);
 
-        assert_eq!(&"hello", h.get(12).unwrap().entry);
-        assert_eq!(10,       h.get(12).unwrap().index);
-        assert_eq!(5,        h.get(12).unwrap().size);
+        assert_eq!("hello", h.get(12).unwrap().entry);
+        assert_eq!(10,      h.get(12).unwrap().index);
+        assert_eq!(5,       h.get(12).unwrap().size);
 
-        assert_eq!(&"hello", h.get(13).unwrap().entry);
-        assert_eq!(10,       h.get(13).unwrap().index);
-        assert_eq!(5,        h.get(13).unwrap().size);
+        assert_eq!("hello", h.get(13).unwrap().entry);
+        assert_eq!(10,      h.get(13).unwrap().index);
+        assert_eq!(5,       h.get(13).unwrap().size);
 
-        assert_eq!(&"hello", h.get(14).unwrap().entry);
-        assert_eq!(10,       h.get(14).unwrap().index);
-        assert_eq!(5,        h.get(14).unwrap().size);
+        assert_eq!("hello", h.get(14).unwrap().entry);
+        assert_eq!(10,      h.get(14).unwrap().index);
+        assert_eq!(5,       h.get(14).unwrap().size);
 
         // Last couple entries are none
         assert!(h.get(15).is_none());
@@ -670,13 +724,13 @@ mod tests {
 
         assert_eq!(1, h.len());
 
-        assert_eq!(&"hello", h.get(0).unwrap().entry);
-        assert_eq!(0,        h.get(0).unwrap().index);
-        assert_eq!(2,        h.get(0).unwrap().size);
+        assert_eq!("hello", h.get(0).unwrap().entry);
+        assert_eq!(0,       h.get(0).unwrap().index);
+        assert_eq!(2,       h.get(0).unwrap().size);
 
-        assert_eq!(&"hello", h.get(1).unwrap().entry);
-        assert_eq!(0,        h.get(1).unwrap().index);
-        assert_eq!(2,        h.get(1).unwrap().size);
+        assert_eq!("hello", h.get(1).unwrap().entry);
+        assert_eq!(0,       h.get(1).unwrap().index);
+        assert_eq!(2,       h.get(1).unwrap().size);
 
         assert!(h.get(2).is_none());
     }
@@ -685,6 +739,8 @@ mod tests {
     fn test_max_size() {
         // Inserting at 7-8-9 works
         let mut h: BumpyVector<&str> = BumpyVector::new(10);
+        assert_eq!(10, h.max_size());
+
         h.insert(("hello", 7, 3).into()).unwrap();
         assert_eq!(1, h.len());
 
@@ -783,6 +839,20 @@ mod tests {
     }
 
     #[test]
+    fn test_get_mut() {
+        // Create an object
+        let mut h: BumpyVector<String> = BumpyVector::new(100);
+        h.insert((String::from("hello"), 8, 2).into()).unwrap();
+
+        // Get a mutable reference
+        let s = h.get_mut(9).unwrap();
+        s.entry.make_ascii_uppercase();
+
+        let s2 = h.get(8).unwrap();
+        assert_eq!("HELLO", s2.entry);
+    }
+
+    #[test]
     fn test_get_exact() {
         // Create an object
         let mut h: BumpyVector<&str> = BumpyVector::new(100);
@@ -793,6 +863,23 @@ mod tests {
         assert!(h.get_exact(8).is_some());
         assert!(h.get_exact(9).is_none());
         assert!(h.get_exact(10).is_none());
+    }
+
+    #[test]
+    fn test_get_exact_mut() {
+        // Create an object
+        let mut h: BumpyVector<String> = BumpyVector::new(100);
+        h.insert((String::from("hello"), 8, 2).into()).unwrap();
+
+        // Make sure it's actually exist
+        assert!(h.get_exact_mut(9).is_none());
+
+        // Get a mutable reference
+        let s = h.get_exact_mut(8).unwrap();
+        s.entry.make_ascii_uppercase();
+
+        let s = h.get_exact(8).unwrap();
+        assert_eq!("HELLO", s.entry);
     }
 
     #[test]
@@ -994,7 +1081,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg(feature = "serialize")] // Only test if we enable serialization
     fn test_clone() {
         let mut h: BumpyVector<String> = BumpyVector::new(10);
         h.insert((String::from("a"), 1, 2).into()).unwrap();
