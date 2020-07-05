@@ -21,3 +21,8 @@ Changes:
 * Added `.max_size()` function
 * `.get()` and `.get_exact()` now return a reference to the `BumpyEntry` rather than a new `BumpyEntry` with a reference to the object `T`
 * Add `.get_mut()` and `.get_exact_mut()` functions
+
+# Version 0.0.4
+
+Changes:
+* Remove `iterate_over_empty` as an option
