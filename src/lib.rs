@@ -104,7 +104,7 @@ use serde::{Serialize, Deserialize};
 ///
 /// let e: BumpyEntry<&str> = ("hello", 0, 1).into();
 /// ```
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Clone)]
 #[cfg_attr(feature = "serialize", derive(Serialize, Deserialize))]
 pub struct BumpyEntry<T> {
     pub entry: T,
@@ -123,7 +123,7 @@ impl<T> From<(T, usize, usize)> for BumpyEntry<T> {
 }
 
 /// Represents an instance of a Bumpy Vector
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Clone)]
 #[cfg_attr(feature = "serialize", derive(Serialize, Deserialize))]
 pub struct BumpyVector<T> {
     /// The data is represented by a HashMap, where the index is the key and
