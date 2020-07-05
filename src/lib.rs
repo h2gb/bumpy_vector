@@ -1081,7 +1081,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg(feature = "serialize")] // Only test if we enable serialization
     fn test_clone() {
         let mut h: BumpyVector<String> = BumpyVector::new(10);
         h.insert((String::from("a"), 1, 2).into()).unwrap();
