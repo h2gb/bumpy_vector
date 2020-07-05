@@ -132,9 +132,6 @@ pub struct BumpyVector<T> {
 
     /// The maximum size.
     max_size: usize,
-
-    /// If set, `into_iter()` will iterate over empty addresses.
-    pub iterate_over_empty: bool,
 }
 
 /// Implement the object.
@@ -147,7 +144,6 @@ impl<'a, T> BumpyVector<T> {
         BumpyVector {
             data: HashMap::new(),
             max_size: max_size,
-            iterate_over_empty: false,
         }
     }
 
@@ -463,7 +459,6 @@ impl<'a, T> BumpyVector<T> {
     ///
     /// * `start` - The starting index.
     /// * `length` - The length to retrieve.
-    /// * `include_empty` - If set, include empty entries in between the defined entries
     ///
     /// # Example
     ///
@@ -477,28 +472,20 @@ impl<'a, T> BumpyVector<T> {
     /// v.insert(("hello", 0, 2).into()).unwrap();
     /// v.insert(("hello", 4, 2).into()).unwrap();
     ///
-    /// // Don't include_empty:
-    /// assert_eq!(1, v.get_range(0, 1, false).len());
-    /// assert_eq!(1, v.get_range(0, 2, false).len());
-    /// assert_eq!(1, v.get_range(0, 3, false).len());
-    /// assert_eq!(1, v.get_range(0, 4, false).len());
-    /// assert_eq!(2, v.get_range(0, 5, false).len());
-    ///
-    /// // Do include_empty:
-    /// assert_eq!(1, v.get_range(0, 1, true).len());
-    /// assert_eq!(1, v.get_range(0, 2, true).len());
-    /// assert_eq!(2, v.get_range(0, 3, true).len());
-    /// assert_eq!(3, v.get_range(0, 4, true).len());
-    /// assert_eq!(4, v.get_range(0, 5, true).len());
+    /// assert_eq!(1, v.get_range(0, 1).len());
+    /// assert_eq!(1, v.get_range(0, 2).len());
+    /// assert_eq!(1, v.get_range(0, 3).len());
+    /// assert_eq!(1, v.get_range(0, 4).len());
+    /// assert_eq!(2, v.get_range(0, 5).len());
     /// ```
     ///
     /// # Panics
     ///
     /// Panics if an entry's size is 0. That shouldn't be possible short of
     /// tinkering with internal state (most likely modifying serialized data).
-    pub fn get_range(&self, start: usize, length: usize, include_empty: bool) -> Vec<BumpyEntry<Option<&T>>> {
+    pub fn get_range(&self, start: usize, length: usize) -> Vec<&BumpyEntry<T>> {
         // We're stuffing all of our data into a vector to iterate over it
-        let mut result: Vec<BumpyEntry<Option<&T>>> = Vec::new();
+        let mut result: Vec<&BumpyEntry<T>> = Vec::new();
 
         // Start at the first entry left of what they wanted, if it exists
         let mut i = match self.get_entry_start(start) {
@@ -511,11 +498,7 @@ impl<'a, T> BumpyVector<T> {
             // Pull the entry out, if it exists
             if let Some(e) = self.data.get(&i) {
                 // Add the entry to the vector, and jump over it
-                result.push(BumpyEntry {
-                    entry: Some(&e.entry),
-                    index: i,
-                    size: e.size,
-                });
+                result.push(e);
 
                 // Prevent an infinite loop
                 if e.size == 0 {
@@ -524,14 +507,6 @@ impl<'a, T> BumpyVector<T> {
 
                 i += e.size;
             } else {
-                // If the user wants empty elements, push i fake entry
-                if include_empty {
-                    result.push(BumpyEntry {
-                      entry: None,
-                      index: i,
-                      size: 1,
-                    });
-                };
                 i += 1;
             }
         }
@@ -556,11 +531,11 @@ impl<'a, T> BumpyVector<T> {
 /// that vector into an iterator.
 ///
 impl<'a, T> IntoIterator for &'a BumpyVector<T> {
-    type Item = BumpyEntry<Option<&'a T>>;
-    type IntoIter = std::vec::IntoIter<BumpyEntry<Option<&'a T>>>;
+    type Item = &'a BumpyEntry<T>;
+    type IntoIter = std::vec::IntoIter<&'a BumpyEntry<T>>;
 
-    fn into_iter(self) -> std::vec::IntoIter<BumpyEntry<Option<&'a T>>> {
-        return self.get_range(0, self.max_size, self.iterate_over_empty).into_iter();
+    fn into_iter(self) -> std::vec::IntoIter<&'a BumpyEntry<T>> {
+        return self.get_range(0, self.max_size).into_iter();
     }
 }
 
@@ -883,7 +858,7 @@ mod tests {
     }
 
     #[test]
-    fn test_get_range_skip_empty() {
+    fn test_get_range() {
         // Create a BumpyVector that looks like:
         //
         // [--0-- --1-- --2-- --3-- --4-- --5-- --6-- --7-- --8-- --9--]
@@ -896,28 +871,28 @@ mod tests {
         h.insert(("c", 6, 3).into()).unwrap();
 
         // Get just the first two
-        let result = h.get_range(2, 4, false);
+        let result = h.get_range(2, 4);
         assert_eq!(2, result.len());
 
         // Get the first two, then just barely the third
-        let result = h.get_range(2, 5, false);
+        let result = h.get_range(2, 5);
         assert_eq!(3, result.len());
 
         // Get the first two again, starting further left
-        let result = h.get_range(1, 5, false);
+        let result = h.get_range(1, 5);
         assert_eq!(2, result.len());
 
         // Get all three again
-        let result = h.get_range(1, 6, false);
+        let result = h.get_range(1, 6);
         assert_eq!(3, result.len());
 
         // Get way more than everything
-        let result = h.get_range(0, 100, false);
+        let result = h.get_range(0, 100);
         assert_eq!(3, result.len());
     }
 
     #[test]
-    fn test_get_range_include_empty() {
+    fn test_iterator() {
         // Create a BumpyVector that looks like:
         //
         // [--0-- --1-- --2-- --3-- --4-- --5-- --6-- --7-- --8-- --9--]
@@ -929,125 +904,25 @@ mod tests {
         h.insert(("b", 3, 1).into()).unwrap();
         h.insert(("c", 6, 3).into()).unwrap();
 
-        // Get just the first two, plus two empty spots
-        let result = h.get_range(2, 4, true);
-        assert_eq!(4, result.len());
-
-        // Get the first two, the two empty spots, then just barely the third
-        let result = h.get_range(2, 5, true);
-        assert_eq!(5, result.len());
-
-        // Get an empty spot, then the first one
-        let result = h.get_range(0, 3, true);
-        assert_eq!(2, result.len());
-
-        // Get an empty spot, then the first two
-        let result = h.get_range(0, 4, true);
-        assert_eq!(3, result.len());
-
-        // Get the last one, then the empty spot after it, then we're at the end and should stop
-        let result = h.get_range(8, 1000, true);
-        assert_eq!(2, result.len());
-    }
-
-    #[test]
-    fn test_iterator_with_empty() {
-        // Create a BumpyVector that looks like:
-        //
-        // [--0-- --1-- --2-- --3-- --4-- --5-- --6-- --7-- --8-- --9--]
-        //        +-----------------            +----------------+
-        //        |   "a" (2)| "b" |            |      "c"       |
-        //        +----------+------            +----------------+
-        let mut h: BumpyVector<&str> = BumpyVector::new(10);
-        h.insert(("a", 1, 2).into()).unwrap();
-        h.insert(("b", 3, 1).into()).unwrap();
-        h.insert(("c", 6, 3).into()).unwrap();
-
-        // Iterate over everything, including empty values
-        h.iterate_over_empty = true;
-        let mut iter = h.into_iter();
-
-        // None (index 0)
-        let e = iter.next().unwrap();
-        assert!(e.entry.is_none());
-        assert_eq!(0, e.index);
-        assert_eq!(1, e.size);
-
-        // Entry "a" (index 1-2)
-        let e = iter.next().unwrap();
-        assert_eq!(Some(&"a"), e.entry);
-        assert_eq!(1,          e.index);
-        assert_eq!(2,          e.size);
-
-        // Entry "b" (index 3)
-        let e = iter.next().unwrap();
-        assert_eq!(Some(&"b"), e.entry);
-        assert_eq!(3,          e.index);
-        assert_eq!(1,          e.size);
-
-        // None (index 4)
-        let e = iter.next().unwrap();
-        assert!(e.entry.is_none());
-        assert_eq!(4, e.index);
-        assert_eq!(1, e.size);
-
-        // None (index 5)
-        let e = iter.next().unwrap();
-        assert!(e.entry.is_none());
-        assert_eq!(5, e.index);
-        assert_eq!(1, e.size);
-
-        // Entry "c" (index 6-8)
-        let e = iter.next().unwrap();
-        assert_eq!(Some(&"c"), e.entry);
-        assert_eq!(6,          e.index);
-        assert_eq!(3,          e.size);
-
-        // None (index 9)
-        let e = iter.next().unwrap();
-        assert!(e.entry.is_none());
-        assert_eq!(9, e.index);
-        assert_eq!(1, e.size);
-
-        // That's it!
-        assert!(iter.next().is_none());
-        assert!(iter.next().is_none());
-    }
-
-    #[test]
-    fn test_iterator_skip_empty() {
-        // Create a BumpyVector that looks like:
-        //
-        // [--0-- --1-- --2-- --3-- --4-- --5-- --6-- --7-- --8-- --9--]
-        //        +-----------------            +----------------+
-        //        |   "a" (2)| "b" |            |      "c"       |
-        //        +----------+------            +----------------+
-        let mut h: BumpyVector<&str> = BumpyVector::new(10);
-        h.insert(("a", 1, 2).into()).unwrap();
-        h.insert(("b", 3, 1).into()).unwrap();
-        h.insert(("c", 6, 3).into()).unwrap();
-
-        // Iterate over entries only, skip empty
-        h.iterate_over_empty = false;
         let mut iter = h.into_iter();
 
         // Entry "a" (index 1-2)
         let e = iter.next().unwrap();
-        assert_eq!(Some(&"a"), e.entry);
-        assert_eq!(1,          e.index);
-        assert_eq!(2,          e.size);
+        assert_eq!("a", e.entry);
+        assert_eq!(1,   e.index);
+        assert_eq!(2,   e.size);
 
         // Entry "b" (index 3)
         let e = iter.next().unwrap();
-        assert_eq!(Some(&"b"), e.entry);
-        assert_eq!(3,          e.index);
-        assert_eq!(1,          e.size);
+        assert_eq!("b", e.entry);
+        assert_eq!(3,   e.index);
+        assert_eq!(1,   e.size);
 
         // Entry "c" (index 6-8)
         let e = iter.next().unwrap();
-        assert_eq!(Some(&"c"), e.entry);
-        assert_eq!(6,          e.index);
-        assert_eq!(3,          e.size);
+        assert_eq!("c", e.entry);
+        assert_eq!(6,   e.index);
+        assert_eq!(3,   e.size);
 
         // That's it!
         assert!(iter.next().is_none());
