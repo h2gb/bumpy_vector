@@ -112,12 +112,77 @@ pub struct BumpyEntry<T> {
     pub size: usize,
 }
 
+/// Implemented by a type that knows how to be a BumpyEntry.
+///
+/// That is to say, a type that has a built-in index and size, which can be
+/// consumed to become a BumpyEntry.
+///
+/// # Example
+///
+/// ```
+/// use bumpy_vector::{BumpyVector, AutoBumpyEntry};
+///
+/// // A struct that has an index and size, then whatever other data
+/// struct MyAutoEntry {
+///     size: usize,
+///     index: usize,
+///     // ...anything else
+/// };
+///
+/// // Simplest possible implementation for MyAutoEntry
+/// impl AutoBumpyEntry for MyAutoEntry {
+///     fn index(&self) -> usize {
+///         self.index
+///     }
+///
+///     fn size(&self) -> usize {
+///         self.size
+///     }
+/// };
+///
+/// // Create an entry
+/// let entry = MyAutoEntry {
+///     index: 0,
+///     size: 10,
+/// };
+///
+/// // Create a BumpyVector with the type we created
+/// let mut h: BumpyVector<MyAutoEntry> = BumpyVector::new(100);
+///
+/// // Insert it
+/// assert!(h.insert_auto(entry).is_ok());
+/// ```
+
+pub trait AutoBumpyEntry {
+    fn index(&self) -> usize;
+    fn size(&self) -> usize;
+}
+
 impl<T> From<(T, usize, usize)> for BumpyEntry<T> {
     fn from(o: (T, usize, usize)) -> Self {
         BumpyEntry {
           entry: o.0,
           index: o.1,
           size: o.2,
+        }
+    }
+}
+
+impl<T> From<T> for BumpyEntry<T>
+where
+    T: AutoBumpyEntry
+{
+    fn from(o: T) -> Self
+    {
+        // Pull these out, since the entry we create takes ownership of the
+        // object
+        let index = o.index();
+        let size = o.size();
+
+        BumpyEntry {
+          entry: o,
+          index: index,
+          size: size,
         }
     }
 }
@@ -247,6 +312,43 @@ impl<'a, T> BumpyVector<T> {
         self.data.insert(entry.index, entry);
 
         Ok(())
+    }
+
+    /// Insert an entry that implemented `AutoBumpyEntry`.
+    ///
+    /// The advantage of using this is that the entry knows its own size and
+    /// index, so the insertion code is much cleaner.
+    ///
+    /// See `insert()` for return and errors.
+    ///
+    /// ```
+    /// use bumpy_vector::{BumpyVector, AutoBumpyEntry};
+    ///
+    /// // A struct that has an index and size, then whatever other data
+    /// struct MyAutoEntry {
+    ///     size: usize,
+    ///     index: usize,
+    ///     // ...anything else
+    /// };
+    ///
+    /// // Simplest possible implementation for MyAutoEntry
+    /// impl AutoBumpyEntry for MyAutoEntry {
+    ///     fn index(&self) -> usize { self.index }
+    ///     fn size(&self) -> usize { self.size }
+    /// };
+    ///
+    /// // Create an entry
+    /// let entry = MyAutoEntry { index: 0, size: 10 };
+    ///
+    /// // Create a BumpyVector with the type we created
+    /// let mut h: BumpyVector<MyAutoEntry> = BumpyVector::new(10);
+    ///
+    /// // Insert it
+    /// assert!(h.insert_auto(entry).is_ok());
+    /// ```
+    pub fn insert_auto(&mut self, entry: T) -> Result<(), &'static str>
+    where T: AutoBumpyEntry {
+        self.insert(entry.into())
     }
 
     /// Remove and return the entry at `index`.
@@ -975,5 +1077,50 @@ mod tests {
         assert_eq!("c", cloned.get(6).unwrap().entry);
         assert_eq!(6,   cloned.get(6).unwrap().index);
         assert_eq!(3,   cloned.get(6).unwrap().size);
+    }
+
+    #[test]
+    fn test_auto_bumpy_entry() {
+        struct Test {
+            size: usize,
+            index: usize,
+        };
+
+        impl AutoBumpyEntry for Test {
+            fn index(&self) -> usize {
+                self.index
+            }
+
+            fn size(&self) -> usize {
+                self.size
+            }
+        };
+
+        let good_entry1 = Test {
+            index: 0,
+            size: 10,
+        };
+
+        let good_entry2 = Test {
+            index: 10,
+            size: 10,
+        };
+
+        let bad_entry = Test {
+            index: 5,
+            size: 10,
+        };
+
+        let mut h: BumpyVector<Test> = BumpyVector::new(100);
+
+        // Insert a 5-byte value at 10
+        assert!(h.insert(good_entry1.into()).is_ok());
+        assert_eq!(1, h.len());
+
+        assert!(h.insert(good_entry2.into()).is_ok());
+        assert_eq!(2, h.len());
+
+        assert!(h.insert(bad_entry.into()).is_err());
+        assert_eq!(2, h.len());
     }
 }

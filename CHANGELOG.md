@@ -27,3 +27,9 @@ Changes:
 Changes:
 * Remove `iterate_over_empty` as an option [#11]
 * Simplify iterator code [#11]
+
+# Version 0.0.5
+
+Changes:
+* Add `trait AutoBumpyEntry`, to simplify entries that know their own
+  size/index [#12]
