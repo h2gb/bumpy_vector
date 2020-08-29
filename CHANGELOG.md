@@ -33,3 +33,4 @@ Changes:
 Changes:
 * Add `trait AutoBumpyEntry`, to simplify entries that know their own
   size/index [#12]
+* Change error handling to use `SimpleResult` [#13]
