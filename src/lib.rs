@@ -73,6 +73,8 @@
 
 use std::collections::HashMap;
 
+use simple_error::{SimpleResult, bail};
+
 #[cfg(feature = "serialize")]
 use serde::{Serialize, Deserialize};
 
@@ -287,24 +289,24 @@ impl<'a, T> BumpyVector<T> {
     /// // Fail to insert a value that would go out of bounds
     /// assert!(v.insert(("hello", 100, 1).into()).is_err());
     /// ```
-    pub fn insert(&mut self, entry: BumpyEntry<T>) -> Result<(), &'static str> {
+    pub fn insert(&mut self, entry: BumpyEntry<T>) -> SimpleResult<()> {
         if entry.size == 0 {
-            return Err("Zero is an invalid size for an entry");
+            bail!("Zero is an invalid size for an entry");
         }
 
         if entry.index + entry.size > self.max_size {
-            return Err("Invalid entry: entry exceeds max size");
+            bail!("Invalid entry: entry exceeds max size");
         }
 
         // Check if there's a conflict on the left
         if self.get_entry_start(entry.index).is_some() {
-            return Err("Invalid entry: overlaps another object");
+            bail!("Invalid entry: overlaps another object");
         }
 
         // Check if there's a conflict on the right
         for x in entry.index..(entry.index + entry.size) {
             if self.data.contains_key(&x) {
-                return Err("Invalid entry: overlaps another object");
+                bail!("Invalid entry: overlaps another object");
             }
         }
 
@@ -346,7 +348,7 @@ impl<'a, T> BumpyVector<T> {
     /// // Insert it
     /// assert!(h.insert_auto(entry).is_ok());
     /// ```
-    pub fn insert_auto(&mut self, entry: T) -> Result<(), &'static str>
+    pub fn insert_auto(&mut self, entry: T) -> SimpleResult<()>
     where T: AutoBumpyEntry {
         self.insert(entry.into())
     }
