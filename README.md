@@ -26,19 +26,18 @@ let mut v: BumpyVector<String> = BumpyVector::new(100);
 // Create a 10-byte entry at the start
 let entry: BumpyEntry<String> = BumpyEntry {
   entry: String::from("hello"),
-  size: 10,
-  index: 0,
+  range: 0..10,
 };
 
 // Insert it into the BumpyVector
 assert!(v.insert(entry).is_ok());
 
 // Create another entry, this time from a tuple, that overlaps the first
-let entry: BumpyEntry<String> = (String::from("error"), 1, 5).into();
+let entry: BumpyEntry<String> = (String::from("error"), 1..6).into();
 assert!(v.insert(entry).is_err());
 
 // Create an entry that's off the end of the object
-let entry: BumpyEntry<String> = (String::from("error"), 1000, 5).into();
+let entry: BumpyEntry<String> = (String::from("error"), 1000..1005).into();
 assert!(v.insert(entry).is_err());
 
 // There is still one entry in this vector
@@ -63,7 +62,7 @@ use bumpy_vector::BumpyVector;
 // Assumes "serialize" feature is enabled: `bumpy_vector = { features = ["serialize"] }`
 fn main() {
     let mut h: BumpyVector<String> = BumpyVector::new(10);
-    h.insert((String::from("a"), 1, 2).into()).unwrap();
+    h.insert((String::from("a"), 1..3).into()).unwrap();
 
     // Serialize
     let serialized = ron::ser::to_string(&h).unwrap();
