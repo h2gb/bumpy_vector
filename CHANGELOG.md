@@ -34,3 +34,4 @@ Changes:
 * Add `trait AutoBumpyEntry`, to simplify entries that know their own
   size/index [#12]
 * Change error handling to use `SimpleResult` [#13]
+* Change the index..size stuff to use `std::ops::Range`
