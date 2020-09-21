@@ -26,19 +26,18 @@
 //! // Create a 10-byte entry at the start
 //! let entry: BumpyEntry<String> = BumpyEntry {
 //!   entry: String::from("hello"),
-//!   size: 10,
-//!   index: 0,
+//!   range: 0..10,
 //! };
 //!
 //! // Insert it into the BumpyVector
 //! assert!(v.insert(entry).is_ok());
 //!
 //! // Create another entry, this time from a tuple, that overlaps the first
-//! let entry: BumpyEntry<String> = (String::from("error"), 1, 5).into();
+//! let entry: BumpyEntry<String> = (String::from("error"), 1..6).into();
 //! assert!(v.insert(entry).is_err());
 //!
 //! // Create an entry that's off the end of the object
-//! let entry: BumpyEntry<String> = (String::from("error"), 1000, 5).into();
+//! let entry: BumpyEntry<String> = (String::from("error"), 1000..1005).into();
 //! assert!(v.insert(entry).is_err());
 //!
 //! // There is still one entry in this vector
@@ -63,7 +62,7 @@
 //! // Assumes "serialize" feature is enabled: `bumpy_vector = { features = ["serialize"] }`
 //! fn main() {
 //!     let mut h: BumpyVector<String> = BumpyVector::new(10);
-//!     h.insert((String::from("a"), 1, 2).into()).unwrap();
+//!     h.insert((String::from("a"), 1..3).into()).unwrap();
 //!
 //!     // Serialize
 //!     let serialized = ron::ser::to_string(&h).unwrap();
@@ -83,8 +82,14 @@ use serde::{Serialize, Deserialize};
 
 /// Represents a single entry.
 ///
-/// An entry is comprised of an object of type `T`, a starting index, and a
-/// size.
+/// An entry is comprised of an object of type `T`, and a
+/// [range](https://doc.rust-lang.org/std/ops/struct.Range.html). The range is
+/// normal for Rust's `std::op::Range`, which means it's:
+///
+/// > A (half-open) range bounded inclusively below and exclusively above (start..end).
+///
+/// That means it starts at `start`, and ends at `end - 1`. The size in elements
+/// is `end - start`.
 ///
 /// # Example 1
 ///
@@ -95,19 +100,18 @@ use serde::{Serialize, Deserialize};
 ///
 /// let e: BumpyEntry<&str> = BumpyEntry {
 ///   entry: "hello",
-///   index: 0,
-///   size: 1,
+///   range: 0..1,
 /// };
 /// ```
 ///
 /// # Example 2
 ///
-/// For convenience, you can create an entry from a (T, usize, usize) tuple:
+/// For convenience, you can create an entry from a (T, Range) tuple:
 ///
 /// ```
 /// use bumpy_vector::BumpyEntry;
 ///
-/// let e: BumpyEntry<&str> = ("hello", 0, 1).into();
+/// let e: BumpyEntry<&str> = ("hello", 0..1).into();
 /// ```
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serialize", derive(Serialize, Deserialize))]
@@ -119,12 +123,13 @@ pub struct BumpyEntry<T> {
 /// Implemented by a type that knows how to be a BumpyEntry.
 ///
 /// That is to say, a type that has a built-in index and size, which can be
-/// consumed to become a BumpyEntry.
+/// converted into a `Range`.
 ///
 /// # Example
 ///
 /// ```
 /// use bumpy_vector::{BumpyVector, AutoBumpyEntry};
+/// use std::ops::Range;
 ///
 /// // A struct that has an index and size, then whatever other data
 /// struct MyAutoEntry {
@@ -135,12 +140,8 @@ pub struct BumpyEntry<T> {
 ///
 /// // Simplest possible implementation for MyAutoEntry
 /// impl AutoBumpyEntry for MyAutoEntry {
-///     fn index(&self) -> usize {
-///         self.index
-///     }
-///
-///     fn size(&self) -> usize {
-///         self.size
+///     fn range(&self) -> Range<usize> {
+///         self.index..(self.index + self.size)
 ///     }
 /// };
 ///
@@ -275,19 +276,19 @@ impl<'a, T> BumpyVector<T> {
     /// let mut v: BumpyVector<&str> = BumpyVector::new(10);
     ///
     /// // Insert a 2-byte value starting at index 5 (using BumpyEntry directly)
-    /// assert!(v.insert(BumpyEntry { entry: "hello", index: 5, size: 2 }).is_ok());
+    /// assert!(v.insert(BumpyEntry { entry: "hello", range: 5..7 }).is_ok());
     ///
     /// // Insert another 2-byte value starting at index 7 (using into())
-    /// assert!(v.insert(("hello", 7, 2).into()).is_ok());
+    /// assert!(v.insert(("hello", 7..9).into()).is_ok());
     ///
     /// // Fail to insert a value that would overlap the first
-    /// assert!(v.insert(("hello", 4, 2).into()).is_err());
+    /// assert!(v.insert(("hello", 4..6).into()).is_err());
     ///
     /// // Fail to insert a value that would overlap the second
-    /// assert!(v.insert(("hello", 6, 1).into()).is_err());
+    /// assert!(v.insert(("hello", 6..7).into()).is_err());
     ///
     /// // Fail to insert a value that would go out of bounds
-    /// assert!(v.insert(("hello", 100, 1).into()).is_err());
+    /// assert!(v.insert(("hello", 100..1).into()).is_err());
     /// ```
     pub fn insert(&mut self, entry: BumpyEntry<T>) -> SimpleResult<()> {
         if entry.range.is_empty() {
@@ -325,6 +326,7 @@ impl<'a, T> BumpyVector<T> {
     ///
     /// ```
     /// use bumpy_vector::{BumpyVector, AutoBumpyEntry};
+    /// use std::ops::Range;
     ///
     /// // A struct that has an index and size, then whatever other data
     /// struct MyAutoEntry {
@@ -335,9 +337,10 @@ impl<'a, T> BumpyVector<T> {
     ///
     /// // Simplest possible implementation for MyAutoEntry
     /// impl AutoBumpyEntry for MyAutoEntry {
-    ///     fn index(&self) -> usize { self.index }
-    ///     fn size(&self) -> usize { self.size }
-    /// };
+    ///     fn range(&self) -> Range<usize> {
+    ///         self.index..(self.index + self.size)
+    ///     }
+    /// }
     ///
     /// // Create an entry
     /// let entry = MyAutoEntry { index: 0, size: 10 };
@@ -367,8 +370,8 @@ impl<'a, T> BumpyVector<T> {
     /// let mut v: BumpyVector<&str> = BumpyVector::new(10);
     ///
     /// // Insert some data
-    /// v.insert(("hello", 0, 4).into()).unwrap();
-    /// v.insert(("hello", 4, 4).into()).unwrap();
+    /// v.insert(("hello", 0..4).into()).unwrap();
+    /// v.insert(("hello", 4..8).into()).unwrap();
     ///
     /// assert!(v.remove(0).is_some());
     /// assert!(v.remove(0).is_none());
@@ -393,6 +396,8 @@ impl<'a, T> BumpyVector<T> {
 
     /// Remove and return a range of entries.
     ///
+    /// Ranges work as expected for Rust ranges; see `std::ops::Range`.
+    ///
     /// # Example
     ///
     /// ```
@@ -402,11 +407,11 @@ impl<'a, T> BumpyVector<T> {
     /// let mut v: BumpyVector<&str> = BumpyVector::new(10);
     ///
     /// // Insert some data
-    /// v.insert(("hello", 0, 4).into()).unwrap();
-    /// v.insert(("hello", 4, 4).into()).unwrap();
+    /// v.insert(("hello", 0..4).into()).unwrap();
+    /// v.insert(("hello", 4..8).into()).unwrap();
     ///
-    /// assert_eq!(2, v.remove_range(0, 10).len());
-    /// assert_eq!(0, v.remove_range(0, 10).len());
+    /// assert_eq!(2, v.remove_range(0..10).len());
+    /// assert_eq!(0, v.remove_range(0..10).len());
     /// ```
     pub fn remove_range(&mut self, range: Range<usize>) -> Vec<BumpyEntry<T>> {
         let mut result: Vec<BumpyEntry<T>> = Vec::new();
@@ -434,7 +439,7 @@ impl<'a, T> BumpyVector<T> {
     /// let mut v: BumpyVector<&str> = BumpyVector::new(10);
     ///
     /// // Insert some data
-    /// v.insert(("hello", 0, 4).into()).unwrap();
+    /// v.insert(("hello", 0..4).into()).unwrap();
     ///
     /// assert!(v.get(0).is_some());
     /// assert!(v.get(1).is_some());
@@ -472,7 +477,7 @@ impl<'a, T> BumpyVector<T> {
     /// let mut h: BumpyVector<String> = BumpyVector::new(10);
     ///
     /// // Insert a string to the start
-    /// h.insert((String::from("hello"), 0, 2).into()).unwrap();
+    /// h.insert((String::from("hello"), 0..2).into()).unwrap();
     /// assert_eq!("hello", h.get(0).unwrap().entry);
     /// assert_eq!("hello", h.get(1).unwrap().entry);
     ///
@@ -510,7 +515,7 @@ impl<'a, T> BumpyVector<T> {
     /// let mut v: BumpyVector<&str> = BumpyVector::new(10);
     ///
     /// // Insert some data
-    /// v.insert(("hello", 0, 4).into()).unwrap();
+    /// v.insert(("hello", 0..4).into()).unwrap();
     ///
     /// assert!(v.get_exact(0).is_some());
     /// assert!(v.get_exact(1).is_none());
@@ -536,7 +541,7 @@ impl<'a, T> BumpyVector<T> {
     /// let mut h: BumpyVector<String> = BumpyVector::new(10);
     ///
     /// // Insert a string to the start
-    /// h.insert((String::from("hello"), 0, 2).into()).unwrap();
+    /// h.insert((String::from("hello"), 0..2).into()).unwrap();
     /// assert_eq!("hello", h.get_exact(0).unwrap().entry);
     /// assert!(h.get_exact(1).is_none());
     ///
@@ -556,13 +561,10 @@ impl<'a, T> BumpyVector<T> {
 
     /// Return a vector of entries within the given range.
     ///
-    /// Note that the first entry doesn't need to *start* at the given index
-    /// it can simply be contained there.
+    /// Note that the first entry doesn't need to *start* at the given start
+    /// index it can simply be contained therein.
     ///
-    /// # Parameters
-    ///
-    /// * `start` - The starting index.
-    /// * `length` - The length to retrieve.
+    /// Ranges work as expected for Rust ranges; see `std::ops::Range`.
     ///
     /// # Example
     ///
@@ -573,20 +575,20 @@ impl<'a, T> BumpyVector<T> {
     /// let mut v: BumpyVector<&str> = BumpyVector::new(10);
     ///
     /// // Insert some data with a gap in the middle
-    /// v.insert(("hello", 0, 2).into()).unwrap();
-    /// v.insert(("hello", 4, 2).into()).unwrap();
+    /// v.insert(("hello", 0..2).into()).unwrap();
+    /// v.insert(("hello", 4..6).into()).unwrap();
     ///
-    /// assert_eq!(1, v.get_range(0, 1).len());
-    /// assert_eq!(1, v.get_range(0, 2).len());
-    /// assert_eq!(1, v.get_range(0, 3).len());
-    /// assert_eq!(1, v.get_range(0, 4).len());
-    /// assert_eq!(2, v.get_range(0, 5).len());
+    /// assert_eq!(1, v.get_range(0..1).len());
+    /// assert_eq!(1, v.get_range(0..2).len());
+    /// assert_eq!(1, v.get_range(0..3).len());
+    /// assert_eq!(1, v.get_range(0..4).len());
+    /// assert_eq!(2, v.get_range(0..5).len());
     /// ```
     ///
     /// # Panics
     ///
     /// Panics if an entry's size is 0. That shouldn't be possible short of
-    /// tinkering with internal state (most likely modifying serialized data).
+    /// tinkering with internal state.
     pub fn get_range(&self, range: Range<usize>) -> Vec<&BumpyEntry<T>> {
         // We're stuffing all of our data into a vector to iterate over it
         let mut result: Vec<&BumpyEntry<T>> = Vec::new();
@@ -609,6 +611,7 @@ impl<'a, T> BumpyVector<T> {
                     panic!("Entry cannot be empty!");
                 }
 
+                // Skip to the next range
                 i = e.range.end;
             } else {
                 i += 1;
