@@ -2,6 +2,8 @@
 
 [![Crate](https://img.shields.io/crates/v/bumpy_vector.svg)](https://crates.io/crates/bumpy_vector)
 
+**NOTE: This is deprecated and moved right into libh2gb!**
+
 A vector-like object where elements can be larger than one item. We use
 this primarily to represent objects in a binary that are made up of one
 or more bytes.
